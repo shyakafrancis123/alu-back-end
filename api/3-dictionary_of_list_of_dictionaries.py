@@ -1,27 +1,34 @@
 #!/usr/bin/python3
 """
-Uses https://jsonplaceholder.typicode.com  with an employee ID to give out the information on the state of the employee's todo list.
+Exports all employees' TODO list data in JSON format.
 """
-
 import json
 import requests
-from sys import argv
 
-if __name__ == '__main__':
-    userId = argv[1]
-    user = requests.get("https://jsonplaceholder.typicode.com/users/{}".
-                        format(userId), verify=False).json()
-    todo = requests.get("https://jsonplaceholder.typicode.com/todos?userId={}".
-                        format(userId), verify=False).json()
-    username = user.get('username')
-    tasks = []
-    for task in todo:
-        task_dict = {}
-        task_dict["task"] = task.get('title')
-        task_dict["completed"] = task.get('completed')
-        task_dict["username"] = username
-        tasks.append(task_dict)
-    jsonobj = {}
-    jsonobj[userId] = tasks
-    with open("{}.json".format(userId), 'w') as jsonfile:
-        json.dump(jsonobj, jsonfile)
+
+if __name__ == "__main__":
+    users_url = "https://jsonplaceholder.typicode.com/users"
+    todos_url = "https://jsonplaceholder.typicode.com/todos"
+
+    users = requests.get(users_url).json()
+    todos = requests.get(todos_url).json()
+
+    all_tasks = {}
+
+    for user in users:
+        user_id = user.get("id")
+        username = user.get("username")
+
+        user_tasks = [
+            {
+                "username": username,
+                "task": task.get("title"),
+                "completed": task.get("completed")
+            }
+            for task in todos if task.get("userId") == user_id
+        ]
+
+        all_tasks[user_id] = user_tasks
+
+    with open("todo_all_employees.json", "w") as f:
+        json.dump(all_tasks, f)
