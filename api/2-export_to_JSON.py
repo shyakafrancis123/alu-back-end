@@ -1,29 +1,36 @@
 #!/usr/bin/python3
-"""Module"""
+"""
+Exports an employee's TODO list data to a JSON file.
+"""
 
+import json
 import requests
 import sys
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        sys.exit("Usage: ./2-export_to_JSON.py <employee_id>")
+
     employee_id = sys.argv[1]
-    user_url = "https://jsonplaceholder.typicode.com/users/{}" \
-        .format(employee_id)
-    todos_url = "https://jsonplaceholder.typicode.com/users/{}/todos/" \
-        .format(employee_id)
+    base_url = "https://jsonplaceholder.typicode.com"
 
-    user_info = requests.request('GET', user_url).json()
-    todos_info = requests.request('GET', todos_url).json()
+    user = requests.get(f"{base_url}/users/{employee_id}").json()
+    todos = requests.get(f"{base_url}/todos?userId={employee_id}").json()
 
-    employee_name = user_info["name"]
-    employee_username = user_info["username"]
-    completed_task = list(filter(lambda obj:
-                                 (obj["completed"] is True), todos_info))
-    number_of_done_tasks = len(completed_task)
-    total_number_of_tasks = len(todos_info)
+    username = user.get("username")
 
-    with open(str(employee_id) + '.csv', "w") as file:
-        [file.write('"' + str(employee_id) + '",' +
-                    '"' + employee_username + '",' +
-                    '"' + str(task["completed"]) + '",' +
-                    '"' + task["title"] + '",' + "\n")
-         for task in todos_info]
+    data = {
+        employee_id: [
+            {
+                "task": task.get("title"),
+                "completed": task.get("completed"),
+                "username": username
+            }
+            for task in todos
+        ]
+    }
+
+    filename = f"{employee_id}.json"
+    with open(filename, "w", encoding="utf-8") as f:
+        json.dump(data, f)
